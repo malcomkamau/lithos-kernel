@@ -1,1 +1,0 @@
-/home/malcom/Documents/repositories/kernel-from-scratch/target/x86_64-unknown-none/debug/libkernel_from_scratch.rlib: /home/malcom/Documents/repositories/kernel-from-scratch/src/lib.rs /home/malcom/Documents/repositories/kernel-from-scratch/src/serial.rs /home/malcom/Documents/repositories/kernel-from-scratch/src/vga_buffer.rs

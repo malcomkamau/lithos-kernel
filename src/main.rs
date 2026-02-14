@@ -6,11 +6,13 @@
 
 use core::panic::PanicInfo;
 use lithos::println;
-
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     println!("Lithos Kernel OS booting...");
-    lithos::serial_println!("Lithos Serial Initialized");
+
+    lithos::init();
+
+    println!("It did not crash!");
 
     #[cfg(test)]
     test_main();
