@@ -1,20 +1,33 @@
 #![no_std]
 #![no_main]
-
-mod vga_buffer;
+#![feature(custom_test_frameworks)]
+#![test_runner(lithos::test_runner)]
+#![reexport_test_harness_main = "test_main"]
 
 use core::panic::PanicInfo;
+use lithos::println;
+
+#[no_mangle]
+pub extern "C" fn _start() -> ! {
+    println!("Lithos Kernel OS booting...");
+    lithos::serial_println!("Lithos Serial Initialized");
+
+    #[cfg(test)]
+    test_main();
+
+    loop {}
+}
 
 /// This function is called on panic.
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
     loop {}
 }
 
-#[no_mangle]
-pub extern "C" fn _start() -> ! {
-    println!("Hello World{}", "!");
-
-    loop {}
+#[cfg(test)]
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    lithos::test_panic_handler(info)
 }
