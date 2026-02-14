@@ -17,7 +17,7 @@ pub extern "C" fn _start() -> ! {
     #[cfg(test)]
     test_main();
 
-    loop {}
+    lithos::hlt_loop();
 }
 
 /// This function is called on panic.

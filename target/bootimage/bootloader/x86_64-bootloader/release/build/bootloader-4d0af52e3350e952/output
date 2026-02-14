@@ -1,7 +1,7 @@
 cargo:rerun-if-changed=/home/malcom/Documents/repositories/kernel-from-scratch/Cargo.toml
 cargo:rustc-link-search=native=/home/malcom/Documents/repositories/kernel-from-scratch/target/bootimage/bootloader/x86_64-bootloader/release/build/bootloader-4d0af52e3350e952/out
-cargo:rustc-link-lib=static=kernel_bin-stack_overflow-ae5144108a1de3d1
+cargo:rustc-link-lib=static=kernel_bin-lithos
 cargo:rerun-if-env-changed=KERNEL
 cargo:rerun-if-env-changed=KERNEL_MANIFEST
-cargo:rerun-if-changed=/home/malcom/Documents/repositories/kernel-from-scratch/target/x86_64-unknown-none/debug/deps/stack_overflow-ae5144108a1de3d1
+cargo:rerun-if-changed=/home/malcom/Documents/repositories/kernel-from-scratch/target/x86_64-unknown-none/debug/lithos
 cargo:rerun-if-changed=build.rs
