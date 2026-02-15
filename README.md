@@ -12,3 +12,8 @@ Lithos aims to provide a safe, modular, and high-performance foundation for mode
 - [x] **CPU Foundation**: GDT, IDT, and Interrupt Handling.
 - [x] **Memory Management**: Paging, Frame Allocation, and Heap Support.
 - [x] **Multitasking**: Context switching with CPU register preservation and timer-based preemption.
+- [x] **Virtual File System**: Unified file interface with ramfs implementation.
+- [x] **Block Device Layer**: Abstract disk I/O with RAM disk support.
+- [x] **FAT32 Support**: Boot sector parsing and directory structures (read-only foundation).
+- [x] **Device Files**: /dev/null, /dev/zero, /dev/random.
+- [x] **Interactive Shell**: Command-line interface with ls, mkdir, cd, touch, echo, and more.

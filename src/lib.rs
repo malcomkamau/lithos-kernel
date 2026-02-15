@@ -15,6 +15,9 @@ pub mod vga_buffer;
 pub mod memory;
 pub mod allocator;
 pub mod task;
+pub mod vfs;
+pub mod drivers;
+pub mod shell;
 
 #[alloc_error_handler]
 fn alloc_error_handler(layout: alloc::alloc::Layout) -> ! {

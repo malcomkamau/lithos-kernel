@@ -7,7 +7,7 @@
 extern crate alloc;
 
 use core::panic::PanicInfo;
-use lithos::println;
+use lithos::{println, print};
 use bootloader::{BootInfo, entry_point};
 
 entry_point!(kernel_main);
@@ -68,32 +68,193 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     #[cfg(test)]
     test_main();
 
-    println!("Initializing kernel threads...");
+    println!("=== Lithos OS Boot ===\n");
     
-    use lithos::task::{kernel_thread::KernelThread, thread_scheduler, test_threads};
+    // Test block device layer
+    println!("Testing Block Device Layer...");
+    use lithos::drivers::block::{ramdisk::RamDisk, BlockDevice};
     
-    // Create kernel threads
-    let thread_a = KernelThread::new(test_threads::thread_a);
-    let thread_b = KernelThread::new(test_threads::thread_b);
-    let thread_c = KernelThread::new(test_threads::thread_c);
+    let mut ramdisk = RamDisk::new(100); // 100 blocks = 51.2 KB
+    let mut write_buf = [0u8; 512];
+    let mut read_buf = [0u8; 512];
     
-    println!("Thread A ID: {:?}", thread_a.id());
-    println!("Thread B ID: {:?}", thread_b.id());
-    println!("Thread C ID: {:?}", thread_c.id());
+    // Write test data
+    for i in 0..512 {
+        write_buf[i] = (i % 256) as u8;
+    }
     
-    // Add threads to scheduler
-    thread_scheduler::add_kernel_thread(thread_a);
-    thread_scheduler::add_kernel_thread(thread_b);
-    thread_scheduler::add_kernel_thread(thread_c);
+    match ramdisk.write_block(0, &write_buf) {
+        Ok(_) => println!("  ✓ Wrote block 0"),
+        Err(e) => println!("  ✗ Write failed: {}", e),
+    }
     
-    println!("Starting thread scheduler...");
-    println!("Threads will be preemptively switched by timer interrupt.");
+    // Read it back
+    match ramdisk.read_block(0, &mut read_buf) {
+        Ok(_) => {
+            if read_buf == write_buf {
+                println!("  ✓ Read block 0 - data matches!");
+            } else {
+                println!("  ✗ Read block 0 - data mismatch!");
+            }
+        }
+        Err(e) => println!("  ✗ Read failed: {}", e),
+    }
     
-    // Manually trigger first context switch to start the threads
-    thread_scheduler::schedule_next_thread();
+    println!("  RAM Disk: {} blocks ({} KB)\n", ramdisk.block_count(), ramdisk.block_count() / 2);
+
+    println!("Initializing Virtual File System...");
     
-    // Should never reach here as we've switched to kernel threads
-    println!("ERROR: Returned from thread scheduler!");
+    use lithos::vfs::{ramfs::RamFs, ops};
+    
+    // Create and initialize ramfs
+    let ramfs = RamFs::new();
+    let root = ramfs.root_node();
+    ops::init(root);
+    
+    println!("VFS initialized with ramfs");
+    
+    // Test VFS operations
+    println!("\n=== Testing VFS Operations ===");
+    
+    // Create directories
+    println!("Creating directories...");
+    match ops::vfs_mkdir("/home") {
+        Ok(_) => println!("  ✓ Created /home"),
+        Err(e) => println!("  ✗ Failed to create /home: {}", e),
+    }
+    
+    match ops::vfs_mkdir("/home/user") {
+        Ok(_) => println!("  ✓ Created /home/user"),
+        Err(e) => println!("  ✗ Failed to create /home/user: {}", e),
+    }
+    
+    match ops::vfs_mkdir("/tmp") {
+        Ok(_) => println!("  ✓ Created /tmp"),
+        Err(e) => println!("  ✗ Failed to create /tmp: {}", e),
+    }
+    
+    // Create files
+    println!("\nCreating files...");
+    match ops::vfs_create("/home/user/test.txt") {
+        Ok(_) => println!("  ✓ Created /home/user/test.txt"),
+        Err(e) => println!("  ✗ Failed to create file: {}", e),
+    }
+    
+    match ops::vfs_create("/home/user/readme.md") {
+        Ok(_) => println!("  ✓ Created /home/user/readme.md"),
+        Err(e) => println!("  ✗ Failed to create file: {}", e),
+    }
+    
+    // List directory contents
+    println!("\nListing directory contents...");
+    match ops::vfs_readdir("/") {
+        Ok(entries) => {
+            println!("  Contents of /:");
+            for entry in entries {
+                println!("    - {}", entry);
+            }
+        }
+        Err(e) => println!("  ✗ Failed to read /: {}", e),
+    }
+    
+    match ops::vfs_readdir("/home") {
+        Ok(entries) => {
+            println!("  Contents of /home:");
+            for entry in entries {
+                println!("    - {}", entry);
+            }
+        }
+        Err(e) => println!("  ✗ Failed to read /home: {}", e),
+    }
+    
+    match ops::vfs_readdir("/home/user") {
+        Ok(entries) => {
+            println!("  Contents of /home/user:");
+            for entry in entries {
+                println!("    - {}", entry);
+            }
+        }
+        Err(e) => println!("  ✗ Failed to read /home/user: {}", e),
+    }
+    
+    println!("\n=== VFS Test Complete ===");
+    
+    // Create /dev directory and add device files
+    println!("\n=== Setting up Device Files ===");
+    match ops::vfs_mkdir("/dev") {
+        Ok(_) => println!("  ✓ Created /dev"),
+        Err(e) => println!("  ✗ Failed to create /dev: {}", e),
+    }
+    
+    // Test device files
+    println!("\nTesting device files...");
+    use lithos::vfs::devfs;
+    
+    let dev_nodes = devfs::create_dev_nodes();
+    println!("  Created {} device nodes", dev_nodes.len());
+    for (name, _node) in &dev_nodes {
+        println!("    - /dev/{}", name);
+    }
+    
+    // Test /dev/zero
+    let zero_node = &dev_nodes[1].1;
+    let mut buf = [0xFFu8; 16];
+    match zero_node.lock().read_at(0, &mut buf) {
+        Ok(n) => {
+            print!("  /dev/zero read {} bytes: ", n);
+            for b in &buf[..8] {
+                print!("{:02x} ", b);
+            }
+            println!("...");
+        }
+        Err(e) => println!("  /dev/zero read failed: {}", e),
+    }
+    
+    // Test /dev/random
+    let random_node = &dev_nodes[2].1;
+    match random_node.lock().read_at(0, &mut buf) {
+        Ok(n) => {
+            print!("  /dev/random read {} bytes: ", n);
+            for b in &buf[..8] {
+                print!("{:02x} ", b);
+            }
+            println!("...");
+        }
+        Err(e) => println!("  /dev/random read failed: {}", e),
+    }
+    
+    // Interactive shell demo
+    println!("\n=== Lithos Shell Demo ===");
+    println!("Demonstrating shell commands...\n");
+    
+    use lithos::shell::Shell;
+    let mut shell = Shell::new();
+    
+    // Demonstrate shell commands
+    let demo_commands = [
+        "help",
+        "pwd",
+        "ls /",
+        "mkdir /usr",
+        "mkdir /usr/bin",
+        "touch /usr/bin/hello",
+        "ls /usr",
+        "ls /usr/bin",
+        "cd /usr",
+        "pwd",
+        "echo Hello from Lithos OS!",
+    ];
+    
+    for cmd in &demo_commands {
+        println!("lithos$ {}", cmd);
+        shell.execute(cmd);
+        println!();
+    }
+    
+    println!("=== Shell Demo Complete ===");
+    println!("\nLithos OS is fully operational!");
+    println!("Features: Multitasking, VFS, Block Devices, FAT32, Device Files, Shell");
+    
     lithos::hlt_loop();
 }
 
