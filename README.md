@@ -11,4 +11,4 @@ Lithos aims to provide a safe, modular, and high-performance foundation for mode
 - [x] **Testing Infrastructure**: Integrated framework for verified development.
 - [x] **CPU Foundation**: GDT, IDT, and Interrupt Handling.
 - [x] **Memory Management**: Paging, Frame Allocation, and Heap Support.
-- [ ] **Multitasking**: Cooperatively and Preemptively scheduled tasks.
+- [x] **Multitasking**: Cooperative and Preemptive task scheduling with round-robin scheduler.

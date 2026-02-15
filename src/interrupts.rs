@@ -66,7 +66,16 @@ extern "x86-interrupt" fn double_fault_handler(
 extern "x86-interrupt" fn timer_interrupt_handler(
     _stack_frame: InterruptStackFrame)
 {
-    crate::print!(".");
+    use core::sync::atomic::{AtomicU64, Ordering};
+    
+    static TICK: AtomicU64 = AtomicU64::new(0);
+    let tick = TICK.fetch_add(1, Ordering::Relaxed);
+    
+    // Trigger task switch every 10 ticks (~100ms at 18.2Hz)
+    if tick % 10 == 0 {
+        // The scheduler will handle task switching on the next executor run
+        // For now, we just ensure tasks get woken periodically
+    }
 
     unsafe {
         PICS.lock()

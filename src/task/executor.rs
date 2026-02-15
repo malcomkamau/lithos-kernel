@@ -2,6 +2,10 @@ use super::{Task, TaskId};
 use alloc::{collections::BTreeMap, sync::Arc, task::Wake};
 use core::task::{Context, Poll, Waker};
 use crossbeam_queue::ArrayQueue;
+use conquer_once::spin::OnceCell;
+use spin::Mutex;
+
+static EXECUTOR: OnceCell<Mutex<Executor>> = OnceCell::uninit();
 
 pub struct Executor {
     tasks: BTreeMap<TaskId, Task>,
@@ -24,6 +28,7 @@ impl Executor {
             panic!("task with same ID already in tasks");
         }
         self.task_queue.push(task_id).expect("queue full");
+        super::scheduler::add_task(task_id);
     }
 
     pub fn run(&mut self) -> ! {
@@ -55,6 +60,7 @@ impl Executor {
                     // task done -> remove it and its cached waker
                     tasks.remove(&task_id);
                     waker_cache.remove(&task_id);
+                    super::scheduler::mark_completed();
                 }
                 Poll::Pending => {}
             }
@@ -69,6 +75,13 @@ impl Executor {
             enable_and_hlt();
         } else {
             interrupts::enable();
+        }
+    }
+
+    /// Wake a specific task
+    pub fn wake_task(&mut self, task_id: TaskId) {
+        if self.tasks.contains_key(&task_id) {
+            self.task_queue.push(task_id).ok();
         }
     }
 }
@@ -98,5 +111,22 @@ impl Wake for TaskWaker {
 
     fn wake_by_ref(self: &Arc<Self>) {
         self.wake_task();
+    }
+}
+
+/// Initialize the global executor
+pub fn init(executor: Executor) {
+    EXECUTOR.init_once(|| Mutex::new(executor));
+}
+
+/// Get a reference to the global executor
+pub fn get_executor() -> Option<&'static Mutex<Executor>> {
+    EXECUTOR.try_get().ok()
+}
+
+/// Wake a task from an interrupt handler
+pub fn wake_task_from_interrupt(task_id: TaskId) {
+    if let Some(executor) = get_executor() {
+        executor.lock().wake_task(task_id);
     }
 }

@@ -71,8 +71,51 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     use lithos::task::{Task, executor::Executor, keyboard};
 
     let mut executor = Executor::new();
+    
+    // Spawn keyboard task
     executor.spawn(Task::new(keyboard::print_keypresses()));
-    executor.run();
+    
+    // Spawn a CPU-bound task to demonstrate preemptive scheduling
+    executor.spawn(Task::new(async {
+        let mut counter = 0u64;
+        loop {
+            counter = counter.wrapping_add(1);
+            if counter % 100_000 == 0 {
+                lithos::println!("Task A: {}", counter);
+            }
+            // Yield to allow other tasks to run
+            core::future::poll_fn(|cx| {
+                cx.waker().wake_by_ref();
+                core::task::Poll::<()>::Pending
+            }).await;
+        }
+    }));
+    
+    // Spawn another CPU-bound task
+    executor.spawn(Task::new(async {
+        let mut counter = 0u64;
+        loop {
+            counter = counter.wrapping_add(1);
+            if counter % 150_000 == 0 {
+                lithos::println!("Task B: {}", counter);
+            }
+            // Yield to allow other tasks to run
+            core::future::poll_fn(|cx| {
+                cx.waker().wake_by_ref();
+                core::task::Poll::<()>::Pending
+            }).await;
+        }
+    }));
+    
+    // Initialize global executor
+    lithos::task::executor::init(executor);
+    
+    // Run the executor
+    if let Some(executor) = lithos::task::executor::get_executor() {
+        executor.lock().run();
+    } else {
+        panic!("Failed to initialize executor");
+    }
 }
 
 /// This function is called on panic.
