@@ -9,4 +9,6 @@ Lithos aims to provide a safe, modular, and high-performance foundation for mode
 - [x] **VGA Text Driver**: Safe interface for screen output.
 - [x] **Serial Logging**: Professional-grade debugging interface.
 - [x] **Testing Infrastructure**: Integrated framework for verified development.
-- [/] **CPU Foundation**: GDT, IDT, and Interrupt Handling (In Progress).
+- [x] **CPU Foundation**: GDT, IDT, and Interrupt Handling.
+- [x] **Memory Management**: Paging, Frame Allocation, and Heap Support.
+- [ ] **Multitasking**: Cooperatively and Preemptively scheduled tasks.
