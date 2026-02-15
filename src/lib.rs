@@ -18,6 +18,8 @@ pub mod task;
 pub mod vfs;
 pub mod drivers;
 pub mod shell;
+pub mod syscall;
+pub mod elf;
 
 #[alloc_error_handler]
 fn alloc_error_handler(layout: alloc::alloc::Layout) -> ! {

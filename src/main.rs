@@ -223,37 +223,68 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
         Err(e) => println!("  /dev/random read failed: {}", e),
     }
     
-    // Interactive shell demo
-    println!("\n=== Lithos Shell Demo ===");
-    println!("Demonstrating shell commands...\n");
+    // Create initial directory structure
+    println!("\n=== Creating Initial Directory Structure ===");
+    let _ = ops::vfs_mkdir("/usr");
+    let _ = ops::vfs_mkdir("/usr/bin");
+    let _ = ops::vfs_mkdir("/etc");
+    let _ = ops::vfs_mkdir("/var");
+    println!("  ✓ Created /usr, /usr/bin, /etc, /var");
+    
+    // Interactive shell
+    println!("\n╔═══════════════════════════════════════════════════════════╗");
+    println!("║            Welcome to Lithos OS v0.1.0                   ║");
+    println!("╚═══════════════════════════════════════════════════════════╝");
+    println!();
+    println!("Features: Multitasking, VFS, Block Devices, FAT32, Syscalls");
+    println!("Type 'help' for available commands");
+    println!();
     
     use lithos::shell::Shell;
     let mut shell = Shell::new();
     
-    // Demonstrate shell commands
-    let demo_commands = [
-        "help",
-        "pwd",
-        "ls /",
-        "mkdir /usr",
-        "mkdir /usr/bin",
-        "touch /usr/bin/hello",
-        "ls /usr",
-        "ls /usr/bin",
-        "cd /usr",
-        "pwd",
-        "echo Hello from Lithos OS!",
-    ];
-    
-    for cmd in &demo_commands {
-        println!("lithos$ {}", cmd);
-        shell.execute(cmd);
+    // Interactive shell loop
+    loop {
+        print!("lithos$ ");
+        
+        // In a real implementation, we would read from keyboard
+        // For now, we'll demonstrate with predefined commands
+        // This is where keyboard input would be integrated
+        
+        // Since we don't have keyboard input yet, run a demo sequence
+        println!("(Interactive mode not yet implemented - running demo)");
         println!();
+        
+        let demo_commands = [
+            "help",
+            "pwd",
+            "ls /",
+            "cd /usr",
+            "pwd",
+            "ls /usr",
+            "mkdir /usr/local",
+            "touch /usr/local/test.txt",
+            "ls /usr/local",
+            "cd /",
+            "echo Lithos OS is running!",
+        ];
+        
+        for cmd in &demo_commands {
+            println!("lithos$ {}", cmd);
+            shell.execute(cmd);
+            println!();
+        }
+        
+        println!("\n╔═══════════════════════════════════════════════════════════╗");
+        println!("║  Interactive keyboard input coming soon!                 ║");
+        println!("║  For now, the OS runs in demo mode.                      ║");
+        println!("╚═══════════════════════════════════════════════════════════╝");
+        
+        break; // Exit after demo
     }
     
-    println!("=== Shell Demo Complete ===");
-    println!("\nLithos OS is fully operational!");
-    println!("Features: Multitasking, VFS, Block Devices, FAT32, Device Files, Shell");
+    println!("\nLithos OS demonstration complete!");
+    println!("Press Ctrl+A then X to exit QEMU");
     
     lithos::hlt_loop();
 }

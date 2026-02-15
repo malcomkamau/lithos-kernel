@@ -17,3 +17,6 @@ Lithos aims to provide a safe, modular, and high-performance foundation for mode
 - [x] **FAT32 Support**: Boot sector parsing and directory structures (read-only foundation).
 - [x] **Device Files**: /dev/null, /dev/zero, /dev/random.
 - [x] **Interactive Shell**: Command-line interface with ls, mkdir, cd, touch, echo, and more.
+- [x] **System Calls**: Full syscall interface (read, write, open, close, exit, fork, exec, wait).
+- [x] **ATA/IDE Driver**: Physical disk access via PIO mode.
+- [x] **ELF Loader**: Parse and load ELF64 binaries.
